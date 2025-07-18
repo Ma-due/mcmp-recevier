@@ -104,23 +104,25 @@ def recursive_customer_info(all_customers, customer, username, password, check_l
         return
     
     # 고객 정보 조회
+    print(customer.customer_id, customer.customer_name, customer.parent_customer_id, customer.parent_customer_name)
     customer_data = get_customer_info(username, password, customer.customer_id)
-    print(customer_data)
-    print("=== 고객 정보 조회 완료 ===")
     
     # API 호출 실패하거나 result가 0000이 아니면 루트 부모로 판단   
     if not customer_data:
+        print(f"루트 부모: {customer.customer_name}")
         check_list.add(customer.customer_id)
         customer.depth = 1
         return
     
+    if not customer.parent_customer_id or customer.parent_customer_id.strip() == '':
+        customer.parent_customer_id = customer_data.get('parentCustomerId', '')
+        customer.parent_customer_name = customer_data.get('parentCustomerName', '')
+        
     parent_customer = all_customers.get(customer.parent_customer_id)
     if not parent_customer:
-        print(f"부모 고객 없음: {customer.parent_customer_id}")
+        print(f"부모 고객 없음: {customer.customer_name}")
         parent_customer = Customer(customer.parent_customer_id, customer.parent_customer_name, '', '')
         all_customers[customer.parent_customer_id] = parent_customer
-        check_list.add(customer.customer_id)
-        return
     
     # 부모를 먼저 재귀 처리
     recursive_customer_info(all_customers, parent_customer, username, password, check_list)
@@ -128,9 +130,8 @@ def recursive_customer_info(all_customers, customer, username, password, check_l
     # 부모의 자식 목록에 현재 고객 추가
     if customer.customer_id not in parent_customer.children:
         parent_customer.children.append(customer.customer_id)
-    
-    customer.depth = parent_customer.depth + 1
-    check_list.add(customer.customer_id)
+        customer.depth = parent_customer.depth + 1
+        check_list.add(customer.customer_id)
     
     print(f"  -> {customer.customer_name} 처리 완료 (depth: {customer.depth})")
 
@@ -152,10 +153,6 @@ if __name__ == "__main__":
     #all_customers = get_all_customers(username, password, cloud_supply_codes)
     test_customer = Customer("C007591", "SKSM_Checkmate", "C000231", "SK네트웍스")
     all_customers = {test_customer.customer_id: test_customer}
-
-    print("=== 고객 목록 ===")
-    for customer in all_customers.values():
-        print(customer.customer_id, customer.customer_name, customer.parent_customer_id, customer.parent_customer_name)
 
     if all_customers:
         # 계층 구조 구축
