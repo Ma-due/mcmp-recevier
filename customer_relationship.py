@@ -10,10 +10,33 @@ class Customer:
         self.customer_name = customer_name
         self.parent_customer_id = parent_customer_id
         self.parent_customer_name = parent_customer_name
+        self.aws = {}
+        self.azure = {}
+        self.datadog = {}
         self.children = []
         self.depth = 0
 
         
+
+def get_all_customers_datadog(username, password, cloud_supply_codes):
+    url = f"https://bizapi.cloudz.co.kr/account/csp/getAllDatadogAccountInfoList"
+    
+    response = requests.get(url, auth=(username, password))
+    data = response.json()
+
+    if data.get('result').get('code') == '0000':
+        return data.get('cspAccountInfoList', [])
+    else:
+        print(data.get('result').get('message'))
+        return None
+
+    return data
+
+def get_cloud_info(cloud_supply_code):
+    if cloud_supply_code == '04':
+        return 'aws'
+    elif cloud_supply_code in ['05', '07']:
+        return 'azure'
 
 def get_all_customers(username, password, cloud_supply_codes):
     """
@@ -56,20 +79,6 @@ def get_all_customers(username, password, cloud_supply_codes):
             print(f"  - 요청 오류: {e}")
 
     return all_customers if all_customers else None
-
-def get_all_customers_datadog(username, password, cloud_supply_codes):
-    url = f"https://bizapi.cloudz.co.kr/account/csp/getAllDatadogAccountInfoList"
-    
-    response = requests.get(url, auth=(username, password))
-    data = response.json()
-
-    if data.get('result').get('code') == '0000':
-        return data.get('cspAccountInfoList', [])
-    else:
-        print(data.get('result').get('message'))
-        return None
-
-    return data
 
 def get_customer_info(username, password, customer_id):
     url = f"https://bizapi.cloudz.co.kr/account/getCustomerInfo?customerId={customer_id}"
